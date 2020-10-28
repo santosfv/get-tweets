@@ -1,0 +1,42 @@
+version: "3.6"
+services:
+  mysql:
+    image: mysql
+    container_name: mysql
+    ports:
+      - "3306:3306"
+    volumes:
+      - airflow-database:/var/lib/mysql
+    command: --explicit_defaults_for_timestamp=1
+
+  scheduler:
+    image: all-in-one:latest
+    container_name: airflow-scheduler
+    entrypoint: [ "/usr/bin/airflow-wrapper.sh", "scheduler" ]
+    volumes:
+      - ./src/dags:/usr/local/airflow/dags:Z
+      - ./src/notebooks:/notebokks:Z
+      - ./data:data:Z
+    ports:
+      - "8793:8793"
+    env_file: ./resources/config/airflow.env
+    depends_on:
+      - mysql
+
+  webserver:
+    image: all-in-one:latest
+    container_name: airflow-web
+    entrypoint: [ "/usr/bin/airflow-wrapper.sh", "webserver" ]
+    volumes:
+      - ./src/dags:/usr/local/airflow/dags:Z
+      - ./src/notebooks:/notebokks:Z
+      - ./data:data:Z
+    ports:
+      - "8089:8080"
+    env_file: resources/config/airflow.env
+    depends_on:
+      - scheduler
+      - mysql
+
+volumes:
+  airflow-database:
